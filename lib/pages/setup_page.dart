@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vibehear/pages/home.dart';
 import 'package:vibehear/pages/intro_page.dart';
 import 'package:vibehear/pages/support.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SetupPage extends StatefulWidget {
   const SetupPage({super.key});
@@ -15,6 +16,21 @@ class _SetupPageState extends State<SetupPage> {
   TextEditingController middleNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
   TextEditingController nickNameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+  Future<void> loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      firstNameController.text = prefs.getString('firstName') ?? '';
+      middleNameController.text = prefs.getString('middleName') ?? '';
+      lastNameController.text = prefs.getString('lastName') ?? '';
+      nickNameController.text = prefs.getString('nickName') ?? '';
+    });
+  }
 
   void showValidationDialog() {
     showDialog(
@@ -305,7 +321,7 @@ class _SetupPageState extends State<SetupPage> {
             SizedBox(height: 37),
 
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 String firstName = firstNameController.text.trim();
                 String middleName = middleNameController.text.trim();
                 String lastName = lastNameController.text.trim();
@@ -313,6 +329,14 @@ class _SetupPageState extends State<SetupPage> {
                 if (firstName.isEmpty || lastName.isEmpty) {
                   showValidationDialog();
                 } else {
+                  // Saving Names Locally (So that user needn't to write it again n again)
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('firstName', firstName);
+                  await prefs.setString('middleName', middleName);
+                  await prefs.setString('lastName', lastName);
+                  await prefs.setString('nickName', nickName);
+
+                  // Navigation to Home Screen
                   Navigator.push(
                     context,
                     MaterialPageRoute(
