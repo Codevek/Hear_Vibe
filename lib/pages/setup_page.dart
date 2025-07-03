@@ -335,6 +335,7 @@ class _SetupPageState extends State<SetupPage> {
                   await prefs.setString('middleName', middleName);
                   await prefs.setString('lastName', lastName);
                   await prefs.setString('nickName', nickName);
+                  await prefs.setBool('isFirstTime', false);
 
                   // Navigation to Home Screen
                   Navigator.push(
