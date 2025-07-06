@@ -9,23 +9,48 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-  runApp(MyApp(isFirstTime: isFirstTime,));
+  // Load stored user data
+  final firstName = prefs.getString('firstName') ?? '';
+  final middleName = prefs.getString('middleName') ?? '';
+  final lastName = prefs.getString('lastName') ?? '';
+  final nickName = prefs.getString('nickName') ?? '';
+
+  runApp(MyApp(
+    isFirstTime: isFirstTime,
+    firstName: firstName,
+    middleName: middleName,
+    lastName: lastName,
+    nickName: nickName,
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final bool isFirstTime;
+  final String firstName;
+  final String middleName;
+  final String lastName;
+  final String nickName;
 
-  const MyApp({super.key, required this.isFirstTime});
+  const MyApp({
+    super.key,
+    required this.isFirstTime,
+    required this.firstName,
+    required this.middleName,
+    required this.lastName,
+    required this.nickName,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: isFirstTime ? const IntroPage() : const Home(
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        nickName: '',
+      home: isFirstTime
+          ? const IntroPage()
+          : Home(
+        firstName: firstName,
+        middleName: middleName,
+        lastName: lastName,
+        nickName: nickName,
       ),
     );
   }
