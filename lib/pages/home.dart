@@ -66,25 +66,25 @@ class _HomeState extends State<Home> {
       backgroundColor: Color.fromRGBO(242, 250, 255, 1),
       appBar: AppBar(
         leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: Padding(
-                padding: const EdgeInsets.only(left: 12.0),
-                child: Icon(
+            builder: (context) {
+              return IconButton(
+                icon: Padding(
+                  padding: const EdgeInsets.only(left: 12.0),
+                  child: Icon(
                     Icons.menu,
-                  color: Colors.grey.shade800,
+                    color: Colors.grey.shade800,
+                  ),
                 ),
-              ),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          }
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
+            }
         ),
         title: Transform.translate(
           offset: Offset(-12, 0),
           child: Text(
-              'Vibe Hear',
+            'Vibe Hear',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
@@ -108,9 +108,9 @@ class _HomeState extends State<Home> {
             GestureDetector(
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SetupPage()
-                    ),
+                  context,
+                  MaterialPageRoute(builder: (context) => SetupPage()
+                  ),
                 );
               },
               child: Padding(
@@ -125,10 +125,10 @@ class _HomeState extends State<Home> {
             GestureDetector(
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => SettingsPage(),
-                    ),
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsPage(),
+                  ),
                 );
               },
               child: Padding(
@@ -143,16 +143,16 @@ class _HomeState extends State<Home> {
             GestureDetector(
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Support()
-                    ),
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Support()
+                  ),
                 );
               },
               child: Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: ListTile(
-                      leading: Icon(Icons.headset_mic),
+                  leading: Icon(Icons.headset_mic),
                   title: Text('Support'),
                 ),
               ),
@@ -161,10 +161,10 @@ class _HomeState extends State<Home> {
             GestureDetector(
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => AboutPage(),
-                    ),
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AboutPage(),
+                  ),
                 );
               },
               child: Padding(
