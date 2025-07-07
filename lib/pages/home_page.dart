@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:porcupine_flutter/porcupine_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:vibration/vibration.dart';
 
 class HomePage extends StatefulWidget {
   final String firstName;
@@ -18,25 +22,75 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
+  PorcupineManager? _porcupineManager;
+  String detectionMessage = '';
+  Future<void> _checkMicPermissionAndStart() async {
+    final status = await Permission.microphone.request();
+
+    if (status.isGranted) {
+      await _startWakeWordDetection();
+    } else if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Microphone permission is required")),
+      );
+    }
+  }
+
+  Future<void> _startWakeWordDetection() async {
+    _porcupineManager = await PorcupineManager.fromKeywordPaths(
+      'nWaxpX2URuqdT1ZAvzcSK4M/6yIXhdovnHW2z9kIWINDKKoBXXMAvQ==',
+      ['assets/porcupine_models/Emergency_en_android_v3_0_0.ppn'],
+          (int keywordIndex) => _onWakeWordDetected(),
+      sensitivities: [0.65],
+    );
+    await _porcupineManager!.start();
+  }
+
   @override
   void initState() {
     super.initState();
-
+    _checkMicPermissionAndStart();
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..repeat(reverse: true);
 
     _animation = Tween<double>(begin: 0.95, end: 1.05).animate(_controller);
+
+    _startWakeWordDetection();
+  }
+
+  Future<void> _onWakeWordDetected() async {
+    setState(() {
+      detectionMessage = 'Detected Emergency';
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final rawPattern = prefs.getStringList("vibration_Emergency") ?? [];
+    final pattern = rawPattern.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toList();
+
+    if ((await Vibration.hasVibrator() ?? false) && pattern.isNotEmpty) {
+      final withPauses = [0];
+      for (final ms in pattern) {
+        withPauses.add(ms);
+        withPauses.add(150);
+      }
+      withPauses.removeLast();
+      Vibration.vibrate(pattern: withPauses);
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _porcupineManager?.delete();
     super.dispose();
   }
 
@@ -55,98 +109,85 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
 
     return Scaffold(
-      backgroundColor: Color.fromRGBO(242, 250, 255, 1),
+      backgroundColor: const Color.fromRGBO(242, 250, 255, 1),
       body: Center(
         child: Column(
           children: [
-
             const SizedBox(height: 20),
-
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(left: 28, right: 28),
                 child: Text.rich(
                   TextSpan(
-                      children: [
+                    children: [
+                      TextSpan(
+                        text: 'Listening for\n',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      TextSpan(
+                        text: widget.firstName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          color: Color.fromRGBO(8, 129, 208, 1),
+                        ),
+                      ),
+                      if (widget.middleName.isNotEmpty)
                         TextSpan(
-                          text: 'Listening for\n',
+                          text: ' ${widget.middleName}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 26,
+                            color: Color.fromRGBO(8, 129, 208, 1),
+                          ),
+                        ),
+                      TextSpan(
+                        text: ' ${widget.lastName}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          color: Color.fromRGBO(8, 129, 208, 1),
+                        ),
+                      ),
+                      if (widget.nickName.isNotEmpty) ...[
+                        TextSpan(
+                          text: ' or ',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 26,
                             color: Colors.grey.shade800,
                           ),
                         ),
-
                         TextSpan(
-                          text: widget.firstName,
-                          style: TextStyle(
+                          text: widget.nickName,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 26,
                             color: Color.fromRGBO(8, 129, 208, 1),
                           ),
                         ),
-
-                        if (widget.middleName.isNotEmpty)
-                          TextSpan(
-                            text: ' ${widget.middleName}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 26,
-                              color: Color.fromRGBO(8, 129, 208, 1),
-                            ),
-                          ),
-                        TextSpan(
-                          text: ' ${widget.lastName}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 26,
-                            color: Color.fromRGBO(8, 129, 208, 1),
-                          ),
+                      ],
+                      TextSpan(
+                        text: '.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          color: Colors.grey.shade800,
                         ),
-
-                        if (widget.nickName.isNotEmpty) ...[
-                          TextSpan(
-                            text: ' or ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 26,
-                              color: Colors.grey.shade800,
-                            ),
-                          ),
-                          TextSpan(
-                            text: widget.nickName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 26,
-                              color: Color.fromRGBO(8, 129, 208, 1),
-                            ),
-                          ),
-                        ],
-
-                        TextSpan(
-                          text: '.',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 26,
-                            color: Colors.grey.shade800,
-                          ),
-                        )
-
-                      ]
+                      )
+                    ],
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-
-            SizedBox(height: 25),
-
-            // logo
+            const SizedBox(height: 25),
             Padding(
-              padding: const EdgeInsets.only(
-                left: 25.0,
-                right: 30.0,
-              ),
+              padding: const EdgeInsets.only(left: 25.0, right: 30.0),
               child: ScaleTransition(
                 scale: _animation,
                 child: Image.asset(
@@ -154,15 +195,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   fit: BoxFit.contain,
                   height: 120,
                   width: 300,
-                  color: Color.fromRGBO(8, 129, 208, 1),
+                  color: const Color.fromRGBO(8, 129, 208, 1),
                 ),
               ),
             ),
-
-            SizedBox(
-              height: 25,
-            ),
-
+            const SizedBox(height: 25),
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -173,10 +210,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    detectionMessage,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
                 ),
               ),
             )
-
           ],
         ),
       ),
