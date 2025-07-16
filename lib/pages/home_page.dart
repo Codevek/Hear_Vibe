@@ -22,13 +22,44 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  PorcupineManager? _porcupineManager;
   String detectionMessage = '';
+  final List<PorcupineManager> _managers = [];
+
+  final List<Map<String, dynamic>> keywordConfigs = [
+    {
+      'path': 'assets/porcupine_models/Emergency_en_android_v3_0_0.ppn',
+      'accessKey': 'nWaxpX2URuqdT1ZAvzcSK4M/6yIXhdovnHW2z9kIWINDKKoBXXMAvQ==',
+      'trigger': 'Emergency',
+    },
+    {
+      'path': 'assets/porcupine_models/Help-Me_en_android_v3_0_0.ppn',
+      'accessKey': '0RcAhXRfguJegEflUvMtqokuPaIy8lPceGzf2rbUvXVOLio8AtHjqA==',
+      'trigger': 'Help Me',
+    },
+    {
+      'path': 'assets/porcupine_models/Come-Here_en_android_v3_0_0.ppn',
+      'accessKey': 'd2FMkGV8Az9Rhv0XZi3a+pOGuAG4gK0/MRUBNJ4duT7oHTkjkphnpA==',
+      'trigger': 'Come Here',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkMicPermissionAndStart();
+
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 0.95, end: 1.05).animate(_controller);
+  }
+
   Future<void> _checkMicPermissionAndStart() async {
     final status = await Permission.microphone.request();
 
@@ -44,37 +75,31 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Future<void> _startWakeWordDetection() async {
-    _porcupineManager = await PorcupineManager.fromKeywordPaths(
-      'nWaxpX2URuqdT1ZAvzcSK4M/6yIXhdovnHW2z9kIWINDKKoBXXMAvQ==',
-      ['assets/porcupine_models/Emergency_en_android_v3_0_0.ppn'],
-          (int keywordIndex) => _onWakeWordDetected(),
-      sensitivities: [0.65],
-    );
-    await _porcupineManager!.start();
+    final prefs = await SharedPreferences.getInstance();
+
+    for (final config in keywordConfigs) {
+      final isEnabled = prefs.getBool('enabled_${config['trigger']}') ?? true;
+      if (!isEnabled) continue;
+
+      final manager = await PorcupineManager.fromKeywordPaths(
+        config['accessKey'],
+        [config['path']],
+            (int index) => _handleDetection(config['trigger']),
+        sensitivities: [0.65],
+      );
+      await manager.start();
+      _managers.add(manager);
+    }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _checkMicPermissionAndStart();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 1),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(begin: 0.95, end: 1.05).animate(_controller);
-
-    _startWakeWordDetection();
-  }
-
-  Future<void> _onWakeWordDetected() async {
+  Future<void> _handleDetection(String triggerWord) async {
     setState(() {
-      detectionMessage = 'Detected Emergency';
+      detectionMessage = 'Detected $triggerWord';
     });
 
     final prefs = await SharedPreferences.getInstance();
-    final rawPattern = prefs.getStringList("vibration_Emergency") ?? [];
-    final pattern = rawPattern.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toList();
+    final raw = prefs.getStringList("vibration_$triggerWord") ?? [];
+    final pattern = raw.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toList();
 
     if ((await Vibration.hasVibrator() ?? false) && pattern.isNotEmpty) {
       final withPauses = [0];
@@ -90,20 +115,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void dispose() {
     _controller.dispose();
-    _porcupineManager?.delete();
+    for (final manager in _managers) {
+      manager.delete();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     String fullName = widget.firstName;
-
     if (widget.middleName.isNotEmpty) {
       fullName += ' ${widget.middleName}';
     }
-
     fullName += ' ${widget.lastName}';
-
     if (widget.nickName.isNotEmpty) {
       fullName += " or ${widget.nickName}.";
     }
@@ -116,7 +140,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             const SizedBox(height: 20),
             Center(
               child: Padding(
-                padding: const EdgeInsets.only(left: 28, right: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Text.rich(
                   TextSpan(
                     children: [
@@ -187,7 +211,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
             const SizedBox(height: 25),
             Padding(
-              padding: const EdgeInsets.only(left: 25.0, right: 30.0),
+              padding: const EdgeInsets.symmetric(horizontal: 25),
               child: ScaleTransition(
                 scale: _animation,
                 child: Image.asset(

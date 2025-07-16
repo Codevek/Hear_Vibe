@@ -65,12 +65,12 @@ class _VibrationConfigPageState extends State<VibrationConfigPage> {
   Future<void> _testPattern() async {
     final supported = await Vibration.hasVibrator() ?? false;
     if (supported) {
-      final formattedPattern = [0]; // Start immediately
+      final formattedPattern = [0];
       for (final ms in _pattern) {
-        formattedPattern.add(ms);     // vibrate
-        formattedPattern.add(150);    // pause between buzzes
+        formattedPattern.add(ms);
+        formattedPattern.add(150);
       }
-      formattedPattern.removeLast(); // remove final pause
+      formattedPattern.removeLast();
 
       Vibration.vibrate(pattern: formattedPattern);
     }

@@ -9,7 +9,6 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-  // Load stored user data
   final firstName = prefs.getString('firstName') ?? '';
   final middleName = prefs.getString('middleName') ?? '';
   final lastName = prefs.getString('lastName') ?? '';

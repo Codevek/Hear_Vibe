@@ -28,6 +28,6 @@ flutter:
   assets:
   - lib/images/
   - lib/images/whatsapp.png
-  - assets/porcupine_models/Emergency_en_android_v3_0_0.ppn
+  - assets/porcupine_models/
 
 

@@ -23,7 +23,6 @@ class SettingsPage extends StatelessWidget {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
-      // Soft restart — requires native workaround
       if (Platform.isAndroid || Platform.isIOS) {
         SystemChannels.platform.invokeMethod('SystemNavigator.pop');
       }
@@ -57,7 +56,6 @@ class SettingsPage extends StatelessWidget {
           children: [
             const SizedBox(height: 30),
 
-            // Other settings content...
 
             Container(
               width: double.infinity,

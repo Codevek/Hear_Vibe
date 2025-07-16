@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'vibration_config_page.dart';
 
 class VibrationPage extends StatefulWidget {
@@ -11,9 +12,22 @@ class VibrationPage extends StatefulWidget {
 class _VibrationPageState extends State<VibrationPage> {
   final Map<String, bool> triggerWords = {
     "Emergency": true,
-    "Come Here": false,
+    "Come Here": true,
     "Help Me": true,
   };
+  Future<void> _loadToggleStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      triggerWords.forEach((key, _) {
+        triggerWords[key] = prefs.getBool('enabled_$key') ?? true;
+      });
+    });
+  }
+  @override
+  void initState() {
+    super.initState();
+    _loadToggleStates();
+  }
 
   final Color blueTone = const Color.fromRGBO(242, 250, 255, 1);
 
@@ -42,10 +56,12 @@ class _VibrationPageState extends State<VibrationPage> {
               trailing: Switch(
                 value: isEnabled,
                 activeColor: Colors.blue,
-                onChanged: (value) {
+                onChanged: (value) async{
                   setState(() {
                     triggerWords[word] = value;
                   });
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('enabled_$word', value);
                 },
               ),
               onTap: () {
